@@ -42,16 +42,6 @@ def main(stdscr, video_id: str, args: argparse.Namespace):
     data_writer = DataWriter(f"{video_id}-analytics.txt")
     video_info = get_video_info(video_id)
     stream_start_unix_time = video_info["release_timestamp"]
-    if not bool(video_info["is_live"]):
-        vod_parser = VodParser(video_id, data_writer,
-                               start_unix_time=stream_start_unix_time,
-                               theshold=args.threshold,
-                               cooldown=args.cooldown,
-                               keywords=args.keywords)
-        vod_parser.download_live_chat()
-        vod_parser.parse_chat()
-        vod_parser.clean_up()
-        exit()
     if args.keywords:
         keywords = [keyword.strip() for keyword in args.keywords.split(",")]
     message_count = 0
@@ -146,4 +136,16 @@ if __name__ == "__main__":
         if input(f"File {args.video_id}-analytics.txt already exists. Overwrite? (y/n): ").lower() != "y":
             print("Exiting...")
             exit()
+    video_info = get_video_info(args.video_id)
+    if not bool(video_info["is_live"]):
+        print("Video is not live. Starting VOD parser...")
+        vod_parser = VodParser(args.video_id, DataWriter(f"{args.video_id}-analytics.txt"),
+                               start_unix_time=video_info["release_timestamp"],
+                               theshold=args.threshold,
+                               cooldown=args.cooldown,
+                               keywords=args.keywords)
+        vod_parser.download_live_chat()
+        vod_parser.parse_chat()
+        vod_parser.clean_up()
+        exit()
     curses.wrapper(main, args.video_id, args)
